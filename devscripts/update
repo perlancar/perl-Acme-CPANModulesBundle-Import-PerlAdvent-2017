@@ -1,0 +1,60 @@
+#!/usr/bin/env perl
+
+use 5.010;
+use strict;
+use warnings;
+use FindBin '$Bin';
+
+use App::CreateAcmeCPANModulesImportModules;
+use Perinci::Sub::Util qw(gen_curried_sub);
+use Perinci::CmdLine::Any;
+
+my %add_modules = (
+    # not linked
+    "01" => ["utf8"],
+    "02" => ["Emoji::NationalFlag"],
+    "03" => ["Test::Perl::Critic", "Perl::Critic"],
+    "11" => ["Path::Tiny"],
+    "12" => ["Devel::MAT"],
+    "13" => ["Unicode::UCD"],
+    "21" => ["DBIx::Class"],
+);
+
+my %typos = (
+    'MooseX::LazyRequires' => 'MooseX::LazyRequire',
+    'Perl::PrereqScanner::NotSoLite' => 'Perl::PrereqScanner::NotQuiteLite',
+);
+
+gen_curried_sub(
+    'App::CreateAcmeCPANModulesImportModules::create_acme_cpanmodules_import_modules',
+    {
+        modules => [
+            {
+                name => '2017',
+                url => "http://perladvent.org/2017/",
+                extract_urls => [map {"http://perladvent.org/2017/2017-12-$_.html"} "01".."25"],
+                summary => 'Modules mentioned in Perl Advent Calendar 2017',
+                add_modules => [map {@$_} values %add_modules],
+            },
+            (map {
+                +{
+                    name => "2017_12_$_",
+                    url => "http://perladvent.org/2017/2017-12-$_.html",
+                    summary => "Modules mentioned in Perl Advent Calendar 2017 (day $_)",
+                    add_modules => [@{ $add_modules{$_} // [] }],
+                },
+            } "01".."24"),
+        ],
+        typos => \%typos,
+        ignore_empty => 1,
+        namespace => 'Acme::CPANModules::Import::PerlAdvent',
+        user_agent => 'Mozilla/5.0',
+        dist_dir => "$Bin/..",
+    },
+    'app',
+);
+
+Perinci::CmdLine::Any->new(
+    url => '/main/app',
+    log => 1,
+)->run;
